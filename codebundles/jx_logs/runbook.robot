@@ -46,10 +46,11 @@ Suite Initialization
     ...    pattern=\w*
     ...    example=For examples, start here https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
     
-    ${kubectl}=    RW.Core.Import Service    kubectl
-    ...    description=The location service used to interpret shell commands.
-    ...    default=kubectl-service.shared
-    ...    example=kubectl-service.shared
+    #  TODO: Add support for dedicated CLI services in future
+    # ${kubectl}=    RW.Core.Import Service    kubectl
+    # ...    description=The location service used to interpret shell commands.
+    # ...    default=kubectl-service.shared
+    # ...    example=kubectl-service.shared
 
     ${NAMESPACE}=    RW.Core.Import User Variable    NAMESPACE
     ...    type=string

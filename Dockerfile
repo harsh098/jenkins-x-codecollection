@@ -5,7 +5,12 @@ USER root
 RUN mkdir /app/codecollection
 COPY . /app/codecollection
 
+RUN curl -L https://github.com/jenkins-x/jx/releases/download/v3.10.115/jx-linux-amd64.tar.gz | tar xzv && \
+    chmod +x jx && \
+    mv jx /usr/local/bin
+
 RUN pip install -r /app/codecollection/requirements.txt
+
 
 # Install packages
 RUN apt-get update && \

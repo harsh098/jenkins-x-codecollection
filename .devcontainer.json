@@ -10,11 +10,14 @@
         "3000:3000",
         "--name",
         "mycodecollection"
-    ],
+        ],
     "forwardPorts": [
         3000
     ],
     "workspaceFolder": "/app/",
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/app/codecollection,type=bind,consistency=cached"
+    ],
     // Configure tool-specific properties.
     "customizations": {
         // Configure properties specific to VS Code.

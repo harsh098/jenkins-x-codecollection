@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation       Check JenkinsX Pipeline Issues
-Metadata            Author    jon-funk
+Metadata            Author    Harsh Mishra
 Metadata            Display Name    JenkinsX Pipeline Logs
 Metadata            Supports    Kubernetes,AKS,EKS,GKE,OpenShift,JenkinsX
 

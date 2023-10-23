@@ -1,4 +1,4 @@
-import os
+import os, logging
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from typing import List, Tuple
@@ -7,6 +7,7 @@ from RW import platform
 KUBECONFIG = os.getenv("KUBECONFIG")
 SECRET_PREFIX = "secret__"
 SECRET_FILE_PREFIX = "secret_file__"
+logger = logging.getLogger(__name__)
 
 
 def _create_secrets_from_kwargs(**kwargs) -> list[platform.ShellServiceRequestSecret]:

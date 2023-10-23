@@ -18,6 +18,7 @@ def _create_secrets_from_kwargs(**kwargs) -> list[platform.ShellServiceRequestSe
     """
     global SECRET_PREFIX
     global SECRET_FILE_PREFIX
+    global logger
     request_secrets: list[platform.ShellServiceRequestSecret] = [] if len(kwargs.keys()) > 0 else None
     for key, value in kwargs.items():
         if not key.startswith(SECRET_PREFIX) and not key.startswith(SECRET_FILE_PREFIX):

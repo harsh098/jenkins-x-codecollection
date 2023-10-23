@@ -79,5 +79,5 @@ Suite Initialization
     Set Suite Variable    ${NAMESPACE}    ${NAMESPACE}
     Set Suite Variable    ${HOME}    ${HOME}
     Set Suite Variable    ${TEKTON_API_VERSION}    ${TEKTON_API_VERSION}
-    Set Suite Variable    ${KUBECONFIG}    ${kubeconfig.key}
+    Set Suite Variable    ${KUBECONFIG}    ./${kubeconfig.key}
     # Set Suite Variable    ${REPO}    ${REPO}

@@ -5,33 +5,7 @@ from typing import List, Tuple
 from RW import platform
 
 KUBECONFIG = os.getenv("KUBECONFIG")
-SECRET_PREFIX = "secret__"
-SECRET_FILE_PREFIX = "secret_file__"
 logger = logging.getLogger(__name__)
-
-
-def _create_secrets_from_kwargs(**kwargs) -> list[platform.ShellServiceRequestSecret]:
-    """Helper to organize dynamically set secrets in a kwargs list
-
-    Returns:
-        list[platform.ShellServiceRequestSecret]: secrets objects in list form.
-    """
-    global SECRET_PREFIX
-    global SECRET_FILE_PREFIX
-    global logger
-    request_secrets: list[platform.ShellServiceRequestSecret] = [] if len(kwargs.keys()) > 0 else None
-    for key, value in kwargs.items():
-        if not key.startswith(SECRET_PREFIX) and not key.startswith(SECRET_FILE_PREFIX):
-            continue
-        if not isinstance(value, platform.Secret):
-            logger.warning(f"kwarg secret {value} in key {key} is the wrong type, should be platform.Secret")
-            continue
-        if key.startswith(SECRET_PREFIX):
-            request_secrets.append(platform.ShellServiceRequestSecret(value))
-        elif key.startswith(SECRET_FILE_PREFIX):
-            request_secrets.append(platform.ShellServiceRequestSecret(value, as_file=True))
-    return request_secrets
-
 
 class PipelineRun:
     def __init__(self, kubeconfig=KUBECONFIG, tektonVersion="v1beta1", namespace="jx", context="sandbox-cluster-1"):
@@ -89,6 +63,8 @@ class PipelineRun:
                 "tekton.dev", version=self.tektonVersion, namespace=self._namespace, plural="pipelineruns"
             )["items"]
 
+            if len(pipelineRuns) == 0:
+                return []
             response = [
                 (run["metadata"]["name"], run["status"]["conditions"][0]["status"])
                 for run in pipelineRuns
@@ -102,17 +78,26 @@ class PipelineRun:
 
 
 def sli_for_pipeline_runs(
-    kubeconfig=KUBECONFIG, namespace="jx", context="sandbox-cluster-1", tektonVersion="v1beta1", **kwargs
+    kubeconfig=KUBECONFIG, namespace="jx", context="sandbox-cluster-1", tektonVersion="v1beta1"
 ) -> Tuple:
-    request_secrets=_create_secrets_from_kwargs(**kwargs)
+    global logger
+    kubeconfig_location = kubeconfig
+    if type(kubeconfig) == platform.Secret:
+        with open(f"./{kubeconfig.key}", "w") as f:
+            f.write(kubeconfig.value)
+            logger.info(msg="CREATING SECRET FILE")
+        kubeconfig_location = f"./{kubeconfig.key}"
+
     PipelineRunObject = PipelineRun(
-        kubeconfig=kubeconfig, tektonVersion=tektonVersion, context=context, namespace=namespace
+        kubeconfig=kubeconfig_location, tektonVersion=tektonVersion, context=context, namespace=namespace
     )
+
     total_pipeline_runs = len(PipelineRunObject.get_pipeline_runs())
+    failed_pipeline_runs = len(PipelineRunObject.get_failed_pipeline_runs())
+    if type(kubeconfig) == platform.Secret:
+        os.remove(f"./{kubeconfig.key}")
     if total_pipeline_runs == 0:
         return (0.0, 0, 0)
-
-    failed_pipeline_runs = len(PipelineRunObject.get_failed_pipeline_runs())
 
     return (round(1 - (failed_pipeline_runs / total_pipeline_runs), 1), total_pipeline_runs, failed_pipeline_runs)
 

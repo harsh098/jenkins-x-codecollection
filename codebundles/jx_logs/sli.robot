@@ -18,10 +18,9 @@ Check Health Score for Pipelines in Jenkins X
     [Documentation]    Calculates A Score between 0 and 1 for the Tekton Pipelines on Jenkins X.
     [Tags]    jenkinsx pipeline health pipelineruns sli
     ${response}=    JXKeywords.Pipelines.PipelineInfo.Sli For Pipeline Runs
-    ...    kubeconfig=${KUBECONFIG}
+    ...    kubeconfig=${kubeconfig}
     ...    context=${CONTEXT}
     ...    tektonVersion=${TEKTON_API_VERSION}
-    ...    secret_file__kubeconfig=${kubeconfig}
     ...    namespace=${NAMESPACE}
 
     ${score}=    Set Variable    ${response[0]}

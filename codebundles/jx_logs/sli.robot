@@ -22,6 +22,7 @@ Check Health Score for Pipelines in Jenkins X
     ...    context=${CONTEXT}
     ...    tektonVersion=${TEKTON_API_VERSION}
     ...    namespace=${NAMESPACE}
+    ...    secret_file__kubeconfig=${kubeconfig}
 
     ${score}=    Set Variable    ${response[0]}
     ${total_pipeline_runs}=    Set Variable    ${response[1]}

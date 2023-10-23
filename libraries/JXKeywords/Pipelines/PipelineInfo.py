@@ -32,8 +32,7 @@ def _create_secrets_from_kwargs(**kwargs) -> list[platform.ShellServiceRequestSe
 
 
 class PipelineRun:
-    def __init__(self, kubeconfig=KUBECONFIG, tektonVersion="v1beta1", namespace="jx", context="sandbox-cluster-1", **kwargs):
-        request_secrets=_create_secrets_from_kwargs(**kwargs)
+    def __init__(self, kubeconfig=KUBECONFIG, tektonVersion="v1beta1", namespace="jx", context="sandbox-cluster-1"):
         self._kubeconfig = kubeconfig
         self._namespace = namespace
         self._context = context
@@ -101,8 +100,9 @@ class PipelineRun:
 
 
 def sli_for_pipeline_runs(
-    kubeconfig=KUBECONFIG, namespace="jx", context="sandbox-cluster-1", tektonVersion="v1beta1"
+    kubeconfig=KUBECONFIG, namespace="jx", context="sandbox-cluster-1", tektonVersion="v1beta1", **kwargs
 ) -> Tuple:
+    request_secrets=_create_secrets_from_kwargs(**kwargs)
     PipelineRunObject = PipelineRun(
         kubeconfig=kubeconfig, tektonVersion=tektonVersion, context=context, namespace=namespace
     )

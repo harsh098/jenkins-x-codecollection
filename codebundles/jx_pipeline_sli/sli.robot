@@ -57,7 +57,7 @@ Suite Initialization
     ...    example=my-main-cluster
  
     ${TIME_INTERVAL}=    RW.Core.Import User Variable    TIME_INTERVAL
-    ...    type=number
+    ...    type=integer
     ...    description=Time interval to measure in 
     ...    example=3600
     ...    default=86400

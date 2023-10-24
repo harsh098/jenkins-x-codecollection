@@ -32,7 +32,8 @@ Check Health Score for Pipelines in Jenkins X
     RW.Core.Debug Log    Total Pipeline Runs: ${total_pipeline_runs}
     RW.Core.Push Metric    
     ...    value=${score}
-    ...    metric_type=Ratio
+    Log    Failed Pipeline Runs: ${failed_pipeline_runs}
+    Log    Calculated Health Score: ${score}
 
 
 *** Keywords ***

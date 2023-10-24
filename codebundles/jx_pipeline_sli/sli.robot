@@ -14,26 +14,25 @@ Suite Setup         Suite Initialization
 
 
 *** Tasks ***
-Check Health Score for Pipelines in Jenkins X
-    [Documentation]    Calculates A Score between 0 and 1 for the Tekton Pipelines on Jenkins X.
+Return Failing Pipeline Runs within a Given Time Interval
+    [Documentation]    Returns number of failed pipeline runs in a given time interval
     [Tags]    jenkinsx pipeline health pipelineruns sli
     ${response}=    JXKeywords.Pipelines.PipelineInfo.Sli For Pipeline Runs
     ...    kubeconfig=${kubeconfig}
     ...    context=${CONTEXT}
     ...    tektonVersion=${TEKTON_API_VERSION}
     ...    namespace=${NAMESPACE}
+    ...    timeInterval=${TIME_INTERVAL}
 
-    ${score}=    Set Variable    ${response[0]}
-    ${total_pipeline_runs}=    Set Variable    ${response[1]}
-    ${failed_pipeline_runs}=    Set Variable    ${response[2]}
+    ${total_pipeline_runs}=    Set Variable    ${response[0]}
+    ${failed_pipeline_runs}=    Set Variable    ${response[1]}
 
-    RW.Core.Debug Log    Calculated Score: ${score}
     RW.Core.Debug Log    Failing Pipeline Runs: ${failed_pipeline_runs}
     RW.Core.Debug Log    Total Pipeline Runs: ${total_pipeline_runs}
     RW.Core.Push Metric    
-    ...    value=${score}
+    ...    value=${failed_pipeline_runs}
     Log    Failed Pipeline Runs: ${failed_pipeline_runs}
-    Log    Calculated Health Score: ${score}
+    Log    Total Pipeline Runs: ${total_pipeline_runs}
 
 
 *** Keywords ***
@@ -57,12 +56,12 @@ Suite Initialization
     ...    pattern=\w*
     ...    example=my-main-cluster
  
-    ${KUBERNETES_DISTRIBUTION_BINARY}=    RW.Core.Import User Variable    KUBERNETES_DISTRIBUTION_BINARY
-    ...    type=string
-    ...    description=Which binary to use for Kubernetes CLI commands.
-    ...    enum=[kubectl,oc]
-    ...    example=kubectl
-    ...    default=kubectl
+    ${TIME_INTERVAL}=    RW.Core.Import User Variable    TIME_INTERVAL
+    ...    type=integer
+    ...    description=Time interval to measure in 
+    ...    pattern=^-?\d+$
+    ...    example=3600
+    ...    default=86400
     
     ${TEKTON_API_VERSION}=    RW.Core.Import User Variable   TEKTON_API_VERSION
     ...    type=string
@@ -74,11 +73,9 @@ Suite Initialization
     ${HOME}=    RW.Core.Import User Variable    HOME
 
     Set Suite Variable    ${kubeconfig}    ${kubeconfig}
-    # Set Suite Variable    ${kubectl}    ${kubectl}
-    Set Suite Variable    ${KUBERNETES_DISTRIBUTION_BINARY}    ${KUBERNETES_DISTRIBUTION_BINARY}
     Set Suite Variable    ${CONTEXT}    ${CONTEXT}
     Set Suite Variable    ${NAMESPACE}    ${NAMESPACE}
     Set Suite Variable    ${HOME}    ${HOME}
     Set Suite Variable    ${TEKTON_API_VERSION}    ${TEKTON_API_VERSION}
-    # Set Suite Variable    ${KUBECONFIG}    ./${kubeconfig.key}
+    Set Suite Variable    ${TIME_INTERVAL}    ${TIME_INTERVAL}
     # Set Suite Variable    ${REPO}    ${REPO}

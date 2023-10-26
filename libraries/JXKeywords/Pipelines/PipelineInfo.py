@@ -3,6 +3,7 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from typing import List, Tuple
 from RW import platform
+from RW.CLI import run_cli
 from datetime import datetime, timedelta
 
 KUBECONFIG = os.getenv("KUBECONFIG")
@@ -76,6 +77,15 @@ class PipelineRun:
 
         except ApiException as Error:
             return []
+        
+    def get_build_pods_and_steps_from_pipeline_run_name(self, pipelineRunName: str):
+        try:
+            pipelineRunWrapper = self.customApi.get_namespaced_custom_object("tekton.dev", version=self.tektonVersion, namespace=self._namespace, plural="pipelineruns", name=pipelineRunName)
+            taskRuns = pipelineRunWrapper["status"]["taskRuns"]
+            response = [(taskRun["pipelineTaskName"], taskRun["status"]["podName"], taskRun["status"]["steps"]) for _,taskRun in taskRuns.items()]
+            return response
+        except ApiException as Error:
+            return None
 
 
 def sli_for_pipeline_runs(
@@ -122,5 +132,171 @@ def sli_for_pipeline_runs(
     return (total_pipeline_runs, failed_pipeline_runs)
 
 
+
+def _get_pod_logs(podName:str, container:str, kubeconfig=KUBECONFIG, namespace:str="jx", context:str="sandbox-cluster-1", env:dict=None):
+    cmd = ''.join(
+        [
+            "${KUBERNETES_DISTRIBUTION_BINARY}  ",
+            f" --context={context} logs -n {namespace} pod/{podName} -c {container} 2> /dev/null || echo 'Containers Exited'"
+        ]
+    )
+    output:str
+    if type(kubeconfig) == platform.Secret:
+        output = run_cli(
+            cmd = cmd,
+            env = env,
+            secret_file__kubeconfig=kubeconfig
+        )
+    else:
+        output = run_cli(
+            cmd = cmd,
+            env = env,
+        )
+    
+    return output.stdout
+
+def _generate_report(fail_report):
+    
+    body = []
+
+    for taskRun in fail_report["taskRuns"]:
+        steps = []
+        for step in taskRun["failedSteps"]:
+            stepObject = f"""
+                Step Name : {step["name"]}
+                Container Name: {step["containerName"]}
+                Logs :
+                -----------------------------------------------------
+                {step["logs"]}
+                -----------------------------------------------------
+            """
+            steps.append(stepObject)
+        stepsReport= "\n".join(steps)
+        taskReport = f"""
+            Task Run Name : {taskRun["taskRunName"]}
+            Logging Pod : {taskRun["podName"]}
+
+            Failing Steps:
+            {stepsReport} 
+        """
+        body.append(taskReport)
+    
+
+    response_body = "\n".join(body)
+    report=f"""
+        ________________________________________________________________
+        Pipeline Run : {fail_report["failedPipelineRunName"]}
+        Creation Timestamp: {fail_report["creationTimestamp"]}
+        {response_body}
+
+        ________________________________________________________________
+    """
+    return report
+
+
+def get_failing_steps_in_failed_builds(kubeconfig=KUBECONFIG, namespace:str="jx", context:str="sandbox-cluster-1", tektonVersion:str="v1beta1", timeInterval:str="86400", env:dict=None):
+    global logger
+    kubeconfig_location = kubeconfig
+
+    if timeInterval.isdigit():
+        timeInterval = int(timeInterval)
+    else:
+        logger.fatal("Time difference must be numeric")
+        raise TypeError
+
+    if type(kubeconfig) == platform.Secret:
+        with open(f"./{kubeconfig.key}", "w") as f:
+            f.write(kubeconfig.value)
+            logger.info(msg="CREATING SECRET FILE")
+        kubeconfig_location = f"./{kubeconfig.key}"
+
+    x_seconds_ago = datetime.now() - timedelta(seconds=timeInterval)
+
+    PipelineRunObject = PipelineRun(
+        kubeconfig=kubeconfig_location, tektonVersion=tektonVersion, context=context, namespace=namespace
+    )
+
+    failed_runs = [
+        item for item in PipelineRunObject.get_failed_pipeline_runs()
+        if datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%SZ") >= x_seconds_ago
+    ]
+
+    failed_steps = []
+    for run in failed_runs:
+        failed_run_name =  run[0]
+        failed_timestamp =  run[2]
+        build_pods_and_steps_from_pipeline_run_name=PipelineRunObject.get_build_pods_and_steps_from_pipeline_run_name(failed_run_name)
+        run_failed_steps = []
+        try:
+            for taskName, podName, steps in build_pods_and_steps_from_pipeline_run_name:
+                task_failed_steps = [{
+                    "name": step["name"], 
+                    "containerName": step["container"] , 
+                    "logs": _get_pod_logs(podName=podName, container=step["container"], kubeconfig=kubeconfig_location, namespace=namespace, env=env, context=context)
+                    } for step in steps if step["terminated"]["exitCode"]!=0]
+                info = {
+                    "taskRunName" : taskName,
+                    "podName" : podName,
+                    "failedSteps" : task_failed_steps
+                }
+                run_failed_steps.append(info)
+            info = {
+                "failedPipelineRunName" : failed_run_name,
+                "creationTimestamp" : failed_timestamp,
+                "taskRuns" : run_failed_steps
+            }
+            failed_steps.append(info)
+        except KeyError as k:
+            # Skipping Pending pipelines as of noe
+            # TODO: Add support for Failed pipelines with Pending Status 
+            continue
+        
+    if type(kubeconfig) == platform.Secret:
+        os.remove(f"./{kubeconfig.key}")
+    
+    reports = []
+    for step in failed_steps:
+        reports.append(_generate_report(step))
+    
+    final_report = '\n'.join(reports)
+
+
+    return final_report
+
+
+
+    
+
+
 # if __name__ == '__main__' :
-#     print(sli_for_pipeline_runs())
+#     # print(sli_for_pipeline_runs())
+#     # p = PipelineRun()
+#     # x = p.get_build_pods_from_pipeline_run_name("x-jenkinsx-demo-app-main-release-fkb7f")
+#     # import json
+#     env = {"KUBECONFIG":"/app/auth/kubeconfig", "KUBERNETES_DISTRIBUTION_BINARY":"/usr/local/bin/kubectl", "CONTEXT":"sandbox-cluster-1", "NAMESPACE":"jx", "HOME":"/home/python"}
+#     # # x = _get_pod_logs(podName="x-jenkinsx-demo-app-main-release-fkb7f-from-build-pack-pod", container="step-build-container-build", env=env)
+#     x = get_failing_steps_in_failed_builds(timeInterval="604800",env=env)
+#     print(x)
+#     # print(json.dumps(x[0]))
+# #     print(_generate_report({
+# #     "failedPipelineRunName": "x-jenkinsx-demo-app-main-release-fkb7f",
+# #     "creationTimestamp": "2023-10-26T18:26:38Z",
+# #     "taskRuns": [
+# #         {
+# #             "taskRunName": "from-build-pack",
+# #             "podName": "x-jenkinsx-demo-app-main-release-fkb7f-from-build-pack-pod",
+# #             "failedSteps": [
+# #                 {
+# #                     "name": "build-container-build",
+# #                     "containerName": "step-build-container-build",
+# #                     "logs": "Containers Exited\n"
+# #                 },
+# #                 {
+# #                     "name": "promote-changelog",
+# #                     "containerName": "step-promote-changelog",
+# #                     "logs": "Containers Exited\n"
+# #                 }
+# #             ]
+# #         }
+# #     ]
+# # }))

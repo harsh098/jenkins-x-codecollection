@@ -8,7 +8,7 @@ Library             BuiltIn
 Library             RW.Core
 Library             RW.CLI
 Library             OperatingSystem
-
+Library             JXKeywords.Pipelines.PipelineInfo
 Suite Setup         Suite Initialization
 
 
@@ -36,6 +36,24 @@ Get Logs of Latest Build
     RW.Core.Add Pre To Report    Commands Used:\n ${history}
 
 
+
+Get Logs of Failing Builds
+    [Documentation]    Fetches Logs of Failing Steps in Failing Builds
+    [Tags]    jenkinsx pipeline log logs
+    ${report}=    JXKeywords.Pipelines.PipelineInfo.Get Failing Steps In Failed Builds
+    ...    kubeconfig=${kubeconfig}
+    ...    namespace=${NAMESPACE}
+    ...    tektonVersion=${TEKTON_API_VERSION}
+    ...    context=${CONTEXT}
+    ...    timeInterval=${TIME_INTERVAL}
+    ...    env=${env}
+    ${time_total}=    Convert To Integer    ${TIME_INTERVAL}
+    ${time_days}=    Evaluate    ${time_total}//86400
+    ${time_hours}=    Evaluate    (${time_total}%86400)//3600
+    ${time_minutes}=   Evaluate    ((${time_total}%86400)%3600)//60
+    ${time_seconds}=    Evaluate    ((${time_total}%86400)%3600)%60
+    RW.Core.Add Pre To Report    Failing Pipeline Runs in Last ${time_days} Days, ${time_hours} Hours, ${time_minutes} Minutes, ${time_seconds} Seconds
+    RW.Core.Add Pre To Report    ${report}
 
 *** Keywords ***
 Suite Initialization
@@ -70,6 +88,20 @@ Suite Initialization
     ...    enum=[kubectl,oc]
     ...    example=kubectl
     ...    default=kubectl
+    
+    ${TIME_INTERVAL}=    RW.Core.Import User Variable    TIME_INTERVAL
+    ...    type=string
+    ...    description=Time interval (seconds) to measure in Range 1 to 604800 both included
+    ...    pattern=^(?!0\d*$)(?![7-9]\d{5}$)\d{1,6}$
+    ...    example=3600
+    ...    default=86400
+    
+    ${TEKTON_API_VERSION}=    RW.Core.Import User Variable   TEKTON_API_VERSION
+    ...    type=string
+    ...    description=API Version for use in Tekton over JenkinsX.
+    ...    pattern=\w*
+    ...    example=v1beta1
+    ...    default=v1beta1
 
     #  TODO: Add Support for jx cli binary in future tasks
     # ${JX_BINARY}=    RW.Core.Import User Variable    JX_BINARY
@@ -85,7 +117,9 @@ Suite Initialization
     Set Suite Variable    ${CONTEXT}    ${CONTEXT}
     Set Suite Variable    ${NAMESPACE}    ${NAMESPACE}
     Set Suite Variable    ${HOME}    ${HOME}
+    Set Suite Variable    ${TEKTON_API_VERSION}    ${TEKTON_API_VERSION}
+    Set Suite Variable    ${TIME_INTERVAL}    ${TIME_INTERVAL}
     # Set Suite Variable    ${REPO}    ${REPO}
     Set Suite Variable
     ...    ${env}
-    ...    {"KUBECONFIG":"./${kubeconfig.key}", "KUBERNETES_DISTRIBUTION_BINARY":"${KUBERNETES_DISTRIBUTION_BINARY}", "CONTEXT":"${CONTEXT}", "NAMESPACE":"${NAMESPACE}", "HOME":"${HOME}"}
+    ...    {"KUBECONFIG":"./${kubeconfig.key}", "KUBERNETES_DISTRIBUTION_BINARY":"${KUBERNETES_DISTRIBUTION_BINARY}", "CONTEXT":"${CONTEXT}", "NAMESPACE":"${NAMESPACE}", "HOME":"${HOME}", "TEKTON_API_VERSION":"${TEKTON_API_VERSION}", "TIME_INTERVAL":"${TIME_INTERVAL}"}

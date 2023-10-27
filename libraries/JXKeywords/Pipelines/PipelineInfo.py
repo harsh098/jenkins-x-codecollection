@@ -173,7 +173,11 @@ def _get_pod_logs(
     )
     output: str
     if type(kubeconfig) == platform.Secret:
-        output = run_cli(cmd=cmd, env=env, secret_file__kubeconfig=kubeconfig)
+        output = run_cli(
+            cmd=cmd, 
+            env=env, 
+            secret_file__kubeconfig=kubeconfig
+        )
     else:
         output = run_cli(
             cmd=cmd,

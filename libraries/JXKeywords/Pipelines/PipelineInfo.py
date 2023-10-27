@@ -6,7 +6,7 @@ from RW import platform
 from RW.CLI import run_cli
 from datetime import datetime, timedelta
 
-KUBECONFIG = os.getenv("KUBECONFIG")
+KUBECONFIG = os.getenv("KUBECONFIG", default="")
 logger = logging.getLogger(__name__)
 
 class PipelineRun:

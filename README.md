@@ -9,8 +9,8 @@
 <a href='https://codespaces.new/runwhen-contrib/codecollection-template?quickstart=1'><img src='https://github.com/codespaces/badge.svg' alt='Open in GitHub Codespaces' style='max-width: 100%;'></a>
 
 
-# codecollection-template
-A hello-world-style template for codecollection authors to get started writing codebundles. This template contains the minimum file structure expected by the RunWhen platform.
+# jenkins-x-codecollection
+This repo contains the code for Troubleshooting JenkinsX Pipelines and collect metrics on Failing Pipelines as SLI, the tasksets will help with fetching logs for failed builds making troubleshooting JenkinsX pipelines easier on your kubernetes cluster.
 
 [![Build](https://github.com/runwhen-contrib/codecollection-template/actions/workflows/build.yaml/badge.svg)](https://github.com/runwhen-contrib/codecollection-template/actions/workflows/build.yaml)
 

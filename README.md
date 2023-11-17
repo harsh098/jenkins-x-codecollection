@@ -12,7 +12,7 @@
 # jenkins-x-codecollection
 This repo contains the code for Troubleshooting JenkinsX Pipelines and collect metrics on Failing Pipelines as SLI, the tasksets will help with fetching logs for failed builds making troubleshooting JenkinsX pipelines easier on your kubernetes cluster.
 
-[![Build](https://github.com/runwhen-contrib/codecollection-template/actions/workflows/build.yaml/badge.svg)](https://github.com/runwhen-contrib/codecollection-template/actions/workflows/build.yaml)
+[![Build](https://github.com/harsh098/jenkins-x-codecollection/actions/workflows/build.yaml/badge.svg)](https://github.com/harsh098/jenkins-x-codecollection/actions/workflows/build.yaml)
 
 ## Getting Started
 Looking to be a contributor for CodeCollections or start your own? We'd love to collaborate! Head on over to our [public docs](https://docs.runwhen.com/public/runwhen-authors/getting-started-with-codecollection-development) to get started.
@@ -33,7 +33,7 @@ The included script `ro` wraps the `robot` RobotFramework binary, and includes s
 ### Quickstart
 
 Navigate to the codebundle directory
-`cd codecollection/codebundles/hello_world/`
+`cd codecollection/codebundles/`
 
 Run the codebundle
 `ro sli.robot`
